@@ -6,11 +6,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 public class Client {
-    private static String defaultHost = "localhost";
+    private static final String DEFAULT_HOST = "localhost";
 
     public static void main(String[] args) throws IOException {
-        //runSeveralThreads();
-        askUser();
+        runSeveralThreads();
+        //askUser();
     }
 
     private static void askUser() throws IOException {
@@ -23,13 +23,14 @@ public class Client {
             System.out.print("Enter your message (type exit to leave): ");
             userString = consoleReader.readLine();
 
-            if (host == null || host.isEmpty()) host = defaultHost;
+            if (host == null || host.isEmpty()) host = DEFAULT_HOST;
             InetAddress ip = InetAddress.getByName(host);
             Socket socket = new Socket(ip, 6789);
             BufferedReader inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             DataOutputStream outToServer = new DataOutputStream(socket.getOutputStream());
 
             outToServer.write(userString.getBytes("UTF-8"));
+            outToServer.flush();
             System.out.println("Sent.");
             System.out.println(inFromServer.readLine());
             socket.close();
@@ -44,13 +45,14 @@ public class Client {
                 @Override
                 public void run() {
                     try {
-                        InetAddress ip = InetAddress.getByName(defaultHost);
+                        InetAddress ip = InetAddress.getByName(DEFAULT_HOST);
                         Socket socket = new Socket(ip, 6789);
                         BufferedReader inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                         DataOutputStream outToServer = new DataOutputStream(socket.getOutputStream());
 
                         String s = Thread.currentThread().getName();
                         outToServer.write(s.getBytes("UTF-8"));
+                        outToServer.flush();
                         System.out.println(inFromServer.readLine());
                         socket.close();
                     } catch (Exception e) {

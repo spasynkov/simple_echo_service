@@ -7,15 +7,16 @@ import java.net.Socket;
 import java.text.SimpleDateFormat;
 
 public class Server {
+    private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("H:mm:ss:SSS EEE, d MMMM y ('GMT' XXX)");
+
     public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(6789);
-        SimpleDateFormat format = new SimpleDateFormat("H:mm:ss:SSS EEE, d MMMM y ('GMT' XXX)");
         long clientNumber = 0;
+        ServerSocket serverSocket = new ServerSocket(6789);
 
         while (true) {
             try {
-                System.out.println(format.format(System.currentTimeMillis()) + "\tListening...");
-                new Replier(serverSocket.accept(), ++clientNumber, format).start();
+                System.out.println(DATE_FORMATTER.format(System.currentTimeMillis()) + "\tListening...");
+                new Replier(serverSocket.accept(), ++clientNumber).start();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -25,28 +26,27 @@ public class Server {
     private static class Replier extends Thread {
         private Socket socket;
         private long clientNumber;
-        private SimpleDateFormat format;
 
-        Replier(Socket socket, long clientNumber, SimpleDateFormat dateFormat) {
+        Replier(Socket socket, long clientNumber) {
             this.socket = socket;
             this.clientNumber = clientNumber;
-            format = dateFormat;
         }
 
         @Override
         public void run() {
             String messageFromClient = null;
 
-            System.out.println(format.format(System.currentTimeMillis()) + "\tClient #" + clientNumber + " connected.");
+            System.out.println(DATE_FORMATTER.format(System.currentTimeMillis()) + "\tClient #" + clientNumber + " connected.");
 
             try (InputStream inFromClient = socket.getInputStream();
                  PrintWriter outToClient = new PrintWriter(socket.getOutputStream())) {
 
                 messageFromClient = getMessageFromClient(inFromClient);
-                System.out.println(format.format(System.currentTimeMillis()) + "\tGot message from client #" + clientNumber + ": \"" + messageFromClient + "\"\tSending back...");
+                System.out.println(DATE_FORMATTER.format(System.currentTimeMillis()) + "\tGot message from client #" + clientNumber + ": \"" + messageFromClient + "\"\tSending back...");
 
                 outToClient.write(messageFromClient.toUpperCase());
-                System.out.println(format.format(System.currentTimeMillis()) + "\tSent to client #" + clientNumber + ".\n");
+                outToClient.flush();
+                System.out.println(DATE_FORMATTER.format(System.currentTimeMillis()) + "\tSent to client #" + clientNumber + ".\n");
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -57,10 +57,12 @@ public class Server {
 
         private void close(Closeable... streams) {
             for (Closeable stream : streams) {
-                try {
-                    stream.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
