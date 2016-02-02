@@ -14,14 +14,14 @@ public class Client {
     }
 
     private static void askUser() throws IOException {
-        String s;
+        String userString;
         BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
         System.out.print("Enter IP or domain name to connect: ");
         String host = consoleReader.readLine();
 
         do {
             System.out.print("Enter your message (type exit to leave): ");
-            s = consoleReader.readLine();
+            userString = consoleReader.readLine();
 
             if (host == null || host.isEmpty()) host = defaultHost;
             InetAddress ip = InetAddress.getByName(host);
@@ -29,11 +29,11 @@ public class Client {
             BufferedReader inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             DataOutputStream outToServer = new DataOutputStream(socket.getOutputStream());
 
-            outToServer.write(s.getBytes("UTF-8"));
+            outToServer.write(userString.getBytes("UTF-8"));
             System.out.println("Sent.");
             System.out.println(inFromServer.readLine());
             socket.close();
-        } while (!s.toLowerCase().equals("exit"));
+        } while (!userString.toLowerCase().equals("exit"));
 
         consoleReader.close();
     }

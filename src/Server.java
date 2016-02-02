@@ -35,20 +35,23 @@ public class Server {
 
         @Override
         public void run() {
-            InputStream inFromClient = null;
-            PrintWriter outToClient = null;
-            try {
-                System.out.println(format.format(System.currentTimeMillis()) + "\tClient #" + clientNumber + " connected.");
-                inFromClient = socket.getInputStream();
-                outToClient = new PrintWriter(socket.getOutputStream());
-                String s = getMessageFromClient(inFromClient);
-                System.out.println(format.format(System.currentTimeMillis()) + "\tGot message from client #" + clientNumber + ": \"" + s + "\"\tSending back...");
-                outToClient.write(s.toUpperCase());
+            String messageFromClient = null;
+
+            System.out.println(format.format(System.currentTimeMillis()) + "\tClient #" + clientNumber + " connected.");
+
+            try (InputStream inFromClient = socket.getInputStream();
+                 PrintWriter outToClient = new PrintWriter(socket.getOutputStream())) {
+
+                messageFromClient = getMessageFromClient(inFromClient);
+                System.out.println(format.format(System.currentTimeMillis()) + "\tGot message from client #" + clientNumber + ": \"" + messageFromClient + "\"\tSending back...");
+
+                outToClient.write(messageFromClient.toUpperCase());
                 System.out.println(format.format(System.currentTimeMillis()) + "\tSent to client #" + clientNumber + ".\n");
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                close(outToClient, inFromClient, socket);
+                close(socket);
+                // if (messageFromClient != null && messageFromClient.toLowerCase().equals("exit")) System.exit(1);
             }
         }
 
@@ -65,7 +68,7 @@ public class Server {
         private String getMessageFromClient(InputStream inputStream) throws IOException {
             byte[] buffer = new byte[1024];
             int bufferSize;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             while (inputStream.available() > 0) {
                 bufferSize = inputStream.read(buffer);
